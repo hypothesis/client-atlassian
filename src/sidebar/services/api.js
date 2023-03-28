@@ -291,6 +291,13 @@ export class APIService {
         apiCall('profile.update')
       ),
     };
+    this.mentions = {
+      users: {
+        read: /** @type {APICall<{userid: string, groupid: string }, void, string[]>} */ (
+          apiCall('mentions.users.read')
+        ),
+      },
+    };
   }
 
   /**
