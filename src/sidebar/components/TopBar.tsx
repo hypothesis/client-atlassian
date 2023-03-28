@@ -2,7 +2,6 @@ import {
   IconButton,
   LinkButton,
   HelpIcon,
-  RefreshIcon,
   ShareIcon,
 } from '@hypothesis/frontend-shared/lib/next';
 import classnames from 'classnames';
@@ -13,9 +12,9 @@ import { isThirdPartyService } from '../helpers/is-third-party-service';
 import { applyTheme } from '../helpers/theme';
 import { withServices } from '../service-context';
 import type { FrameSyncService } from '../services/frame-sync';
-import type { StreamerService } from '../services/streamer';
 import { useSidebarStore } from '../store';
 import GroupList from './GroupList';
+import PendingUpdatesButton from './PendingUpdatesButton';
 import SearchInput from './SearchInput';
 import SortMenu from './SortMenu';
 import StreamSearchInput from './StreamSearchInput';
@@ -37,7 +36,6 @@ export type TopBarProps = {
   // injected
   frameSync: FrameSyncService;
   settings: SidebarSettings;
-  streamer: StreamerService;
 };
 
 /**
@@ -51,18 +49,14 @@ function TopBar({
   onSignUp,
   frameSync,
   settings,
-  streamer,
 }: TopBarProps) {
   const showSharePageButton = !isThirdPartyService(settings);
   const loginLinkStyle = applyTheme(['accentColor'], settings);
 
   const store = useSidebarStore();
   const filterQuery = store.filterQuery();
-  const pendingUpdateCount = store.pendingUpdateCount();
   const isLoggedIn = store.isLoggedIn();
   const hasFetchedProfile = store.hasFetchedProfile();
-
-  const applyPendingUpdates = () => streamer.applyPendingUpdates();
 
   const toggleSharePanel = () => {
     store.toggleSidebarPanel('shareGroupAnnotations');
@@ -106,17 +100,7 @@ function TopBar({
         <div className="grow flex items-center justify-end">
           {isSidebar && (
             <>
-              {pendingUpdateCount > 0 && (
-                <IconButton
-                  icon={RefreshIcon}
-                  onClick={applyPendingUpdates}
-                  size="xs"
-                  variant="primary"
-                  title={`Show ${pendingUpdateCount} new/updated ${
-                    pendingUpdateCount === 1 ? 'annotation' : 'annotations'
-                  }`}
-                />
-              )}
+              <PendingUpdatesButton />
               <SearchInput
                 query={filterQuery || null}
                 onSearch={store.setFilterQuery}
@@ -175,4 +159,4 @@ function TopBar({
   );
 }
 
-export default withServices(TopBar, ['frameSync', 'settings', 'streamer']);
+export default withServices(TopBar, ['frameSync', 'settings']);

@@ -1,6 +1,8 @@
+import { TinyEmitter } from 'tiny-emitter';
+
 import { addConfigFragment } from '../../shared/config-fragment';
 import { Sidebar, MIN_RESIZE, $imports } from '../sidebar';
-import { EventBus } from '../util/emitter';
+import { Emitter } from '../util/emitter';
 
 const DEFAULT_WIDTH = 350;
 const DEFAULT_HEIGHT = 600;
@@ -25,6 +27,7 @@ describe('Sidebar', () => {
   let FakeToolbarController;
   let fakeToolbar;
   let fakeSendErrorsTo;
+  let fakeEmitter;
 
   before(() => {
     sinon.stub(window, 'requestAnimationFrame').yields();
@@ -97,7 +100,7 @@ describe('Sidebar', () => {
     document.body.appendChild(container);
     containers.push(container);
 
-    const eventBus = new EventBus();
+    const eventBus = { createEmitter: () => fakeEmitter };
     const sidebar = new Sidebar(container, eventBus, config);
     sidebars.push(sidebar);
 
@@ -149,6 +152,8 @@ describe('Sidebar', () => {
     FakeToolbarController = sinon.stub().returns(fakeToolbar);
 
     fakeSendErrorsTo = sinon.stub();
+
+    fakeEmitter = new Emitter(new TinyEmitter());
 
     const fakeCreateAppConfig = sinon.spy((appURL, config) => {
       const appConfig = { ...config };
@@ -361,11 +366,12 @@ describe('Sidebar', () => {
     describe('on "openNotebook" event', () => {
       it('hides the sidebar', () => {
         const sidebar = createSidebar();
-        sinon.stub(sidebar, 'hide').callThrough();
-        sinon.stub(sidebar._emitter, 'publish');
+
+        const eventHandler = sinon.stub();
+        fakeEmitter.subscribe('openNotebook', eventHandler);
         emitSidebarEvent('openNotebook', 'mygroup');
-        assert.calledWith(sidebar._emitter.publish, 'openNotebook', 'mygroup');
-        assert.calledOnce(sidebar.hide);
+
+        assert.calledWith(eventHandler, 'mygroup');
         assert.notEqual(sidebar.iframeContainer.style.visibility, 'hidden');
       });
     });
@@ -373,10 +379,55 @@ describe('Sidebar', () => {
     describe('on "closeNotebook" internal event', () => {
       it('shows the sidebar', () => {
         const sidebar = createSidebar();
-        sinon.stub(sidebar, 'show').callThrough();
-        sidebar._emitter.publish('closeNotebook');
-        assert.calledOnce(sidebar.show);
+
+        fakeEmitter.publish('closeNotebook');
         assert.equal(sidebar.iframeContainer.style.visibility, '');
+      });
+    });
+
+    describe('on "openProfile" event', () => {
+      it('hides the sidebar', () => {
+        const sidebar = createSidebar();
+
+        const eventHandler = sinon.stub();
+        fakeEmitter.subscribe('openProfile', eventHandler);
+        emitSidebarEvent('openProfile');
+
+        assert.calledOnce(eventHandler);
+        assert.notEqual(sidebar.iframeContainer.style.visibility, 'hidden');
+      });
+    });
+
+    describe('on "closeProfile" internal event', () => {
+      it('shows the sidebar', () => {
+        const sidebar = createSidebar();
+
+        fakeEmitter.publish('closeProfile');
+        assert.equal(sidebar.iframeContainer.style.visibility, '');
+      });
+    });
+
+    describe('on "toastMessageAdded" event', () => {
+      it('re-publishes event via emitter', () => {
+        createSidebar();
+
+        const eventHandler = sinon.stub();
+        fakeEmitter.subscribe('toastMessageAdded', eventHandler);
+        emitSidebarEvent('toastMessageAdded', {});
+
+        assert.calledWith(eventHandler, {});
+      });
+    });
+
+    describe('on "toastMessageDismissed" event', () => {
+      it('re-publishes event via emitter', () => {
+        createSidebar();
+
+        const eventHandler = sinon.stub();
+        fakeEmitter.subscribe('toastMessageDismissed', eventHandler);
+        emitSidebarEvent('toastMessageDismissed', 'someId');
+
+        assert.calledWith(eventHandler, 'someId');
       });
     });
 

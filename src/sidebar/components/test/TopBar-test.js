@@ -20,7 +20,6 @@ describe('TopBar', () => {
       hasFetchedProfile: sinon.stub().returns(false),
       isLoggedIn: sinon.stub().returns(false),
       isSidebarPanelOpen: sinon.stub().returns(false),
-      pendingUpdateCount: sinon.stub().returns(0),
       setFilterQuery: sinon.stub(),
       toggleSidebarPanel: sinon.stub(),
     };
@@ -68,29 +67,6 @@ describe('TopBar', () => {
       />
     );
   }
-
-  it('shows the pending update count', () => {
-    fakeStore.pendingUpdateCount.returns(1);
-    const wrapper = createTopBar();
-    const applyBtn = getButton(wrapper, 'RefreshIcon');
-    assert.isTrue(applyBtn.exists());
-  });
-
-  it('does not show the pending update count when there are no updates', () => {
-    const wrapper = createTopBar();
-    const applyBtn = getButton(wrapper, 'RefreshIcon');
-    assert.isFalse(applyBtn.exists());
-  });
-
-  it('applies updates when clicked', () => {
-    fakeStore.pendingUpdateCount.returns(1);
-    const wrapper = createTopBar();
-    const applyBtn = getButton(wrapper, 'RefreshIcon');
-
-    applyBtn.props().onClick();
-
-    assert.called(fakeStreamer.applyPendingUpdates);
-  });
 
   describe('`HelpButton` and help requests', () => {
     context('no help service handler configured in services (default)', () => {

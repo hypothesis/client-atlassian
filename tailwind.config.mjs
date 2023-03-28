@@ -8,6 +8,7 @@ export default {
   content: [
     './src/sidebar/components/**/*.{js,ts,tsx}',
     './src/annotator/components/**/*.{js,ts,tsx}',
+    './src/shared/components/**/*.{js,ts,tsx}',
     './dev-server/ui-playground/components/**/*.{js,ts,tsx}',
     './node_modules/@hypothesis/frontend-shared/lib/**/*.{js,ts,tsx}',
     // This module references `sidebar-frame` and related classes
@@ -21,6 +22,7 @@ export default {
         'fade-in': 'fade-in 0.3s forwards',
         'fade-in-slow': 'fade-in 1s ease-in',
         'fade-out': 'fade-out 0.3s forwards',
+        'pulse-fade-out': 'pulse-fade-out 5s ease-in-out forwards',
         'slide-in-from-right': 'slide-in-from-right 0.3s forwards ease-in-out',
       },
       borderRadius: {
@@ -152,6 +154,21 @@ export default {
             opacity: '0',
           },
         },
+        'pulse-fade-out': {
+          '0%': {
+            opacity: '1',
+            transform: 'scale(1.1)',
+          },
+          '8%': {
+            transform: 'scale(1)',
+          },
+          '90%': {
+            opacity: '0.8',
+          },
+          '100%': {
+            opacity: '0',
+          },
+        },
         'slide-in-from-right': {
           '0%': {
             opacity: '0',
@@ -179,7 +196,6 @@ export default {
         'annotator-md': '480px',
         // Tablet and up
         'annotator-lg': '600px',
-        tall: { raw: '(min-height: 700px)' },
       },
       spacing: {
         // These are selective, pixel-specific variants of Tailwind's default
@@ -199,6 +215,11 @@ export default {
       // class to the sidebar frame when it's collapsed. This modifier allows
       // sub-components to select for that state.
       addVariant('sidebar-collapsed', '.sidebar-collapsed &');
+      // Add a custom variant such that the `theme-clean:` modifier is available
+      // for all tailwind utility classes. e.g. `.theme-clean:bg-white` would
+      // only apply (set the element's background color to white) if a parent
+      // element had the `.theme-clean` class.
+      addVariant('theme-clean', '.theme-clean &');
     }),
     plugin(({ addComponents, addUtilities }) => {
       // Tailwind does not provide hyphens-related utility classes.

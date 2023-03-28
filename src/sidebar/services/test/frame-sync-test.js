@@ -55,6 +55,7 @@ describe('FrameSyncService', () => {
   let FakePortRPC;
 
   let fakeAnnotationsService;
+  let fakeToastMessenger;
   let fakePortRPCs;
   let fakePortFinder;
 
@@ -70,6 +71,7 @@ describe('FrameSyncService', () => {
 
   beforeEach(() => {
     fakeAnnotationsService = { create: sinon.stub() };
+    fakeToastMessenger = new EventEmitter();
     fakePortRPCs = [];
     setupPortRPC = null;
 
@@ -173,6 +175,7 @@ describe('FrameSyncService', () => {
       .register('$window', { value: fakeWindow })
       .register('annotationsService', { value: fakeAnnotationsService })
       .register('store', { value: fakeStore })
+      .register('toastMessenger', { value: fakeToastMessenger })
       .register('frameSync', FrameSyncService)
       .get('frameSync');
   });
@@ -1121,6 +1124,44 @@ describe('FrameSyncService', () => {
       fakeStore.setContentInfo(contentInfo);
 
       assert.calledWith(guestRPC().call, 'showContentInfo', contentInfo);
+    });
+  });
+
+  context('when a toast message is added', () => {
+    it('forwards the message to the host if it is hidden and the sidebar is collapsed', () => {
+      const message = { visuallyHidden: true };
+
+      emitHostEvent('sidebarClosed');
+      fakeToastMessenger.emit('toastMessageAdded', message);
+
+      assert.calledWith(hostRPC().call, 'toastMessageAdded', message);
+    });
+
+    it('ignores the message if it is not hidden', () => {
+      const message = { visuallyHidden: false };
+
+      fakeToastMessenger.emit('toastMessageAdded', message);
+
+      assert.neverCalledWith(hostRPC().call, 'toastMessageAdded', message);
+    });
+
+    it('ignores the message if the sidebar is not collapsed', () => {
+      const message = { visuallyHidden: true };
+
+      emitHostEvent('sidebarOpened');
+      fakeToastMessenger.emit('toastMessageAdded', message);
+
+      assert.neverCalledWith(hostRPC().call, 'toastMessageAdded', message);
+    });
+  });
+
+  context('when a toast message is dismissed', () => {
+    it('forwards the message ID to the host', () => {
+      const messageId = 'someId';
+
+      fakeToastMessenger.emit('toastMessageDismissed', messageId);
+
+      assert.calledWith(hostRPC().call, 'toastMessageDismissed', messageId);
     });
   });
 });
