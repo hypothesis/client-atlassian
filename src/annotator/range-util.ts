@@ -1,10 +1,8 @@
 /**
  * Returns true if the start point of a selection occurs after the end point,
  * in document order.
- *
- * @param {Selection} selection
  */
-export function isSelectionBackwards(selection) {
+export function isSelectionBackwards(selection: Selection) {
   if (selection.focusNode === selection.anchorNode) {
     return selection.focusOffset < selection.anchorOffset;
   }
@@ -17,11 +15,8 @@ export function isSelectionBackwards(selection) {
 
 /**
  * Returns true if any part of `node` lies within `range`.
- *
- * @param {Range} range
- * @param {Node} node
  */
-export function isNodeInRange(range, node) {
+export function isNodeInRange(range: Range, node: Node) {
   try {
     const length = node.nodeValue?.length ?? node.childNodes.length;
     return (
@@ -40,15 +35,13 @@ export function isNodeInRange(range, node) {
 /**
  * Iterate over all Node(s) which overlap `range` in document order and invoke
  * `callback` for each of them.
- *
- * @param {Range} range
- * @param {(n: Node) => void} callback
  */
-export function forEachNodeInRange(range, callback) {
+export function forEachNodeInRange(range: Range, callback: (n: Node) => void) {
   const root = range.commonAncestorContainer;
-  const nodeIter = /** @type {Document} */ (
-    root.ownerDocument
-  ).createNodeIterator(root, NodeFilter.SHOW_ALL);
+  const nodeIter: NodeIterator = root.ownerDocument!.createNodeIterator(
+    root,
+    NodeFilter.SHOW_ALL
+  );
 
   let currentNode;
   while ((currentNode = nodeIter.nextNode())) {
@@ -58,27 +51,29 @@ export function forEachNodeInRange(range, callback) {
   }
 }
 
+function nodeIsText(node: Node): node is Text {
+  return node.nodeType === Node.TEXT_NODE;
+}
+
+function textNodeContainsText(textNode: Text): boolean {
+  const whitespaceOnly = /^\s*$/;
+  return !textNode.textContent!.match(whitespaceOnly);
+}
+
 /**
  * Returns the bounding rectangles of non-whitespace text nodes in `range`.
  *
- * @param {Range} range
- * @return {Array<DOMRect>} Array of bounding rects in viewport coordinates.
+ * @return Array of bounding rects in viewport coordinates.
  */
-export function getTextBoundingBoxes(range) {
-  const whitespaceOnly = /^\s*$/;
-  const textNodes = /** @type {Text[]} */ ([]);
+export function getTextBoundingBoxes(range: Range): DOMRect[] {
+  const textNodes: Text[] = [];
   forEachNodeInRange(range, node => {
-    if (
-      node.nodeType === Node.TEXT_NODE &&
-      !(/** @type {string} */ (node.textContent).match(whitespaceOnly))
-    ) {
-      textNodes.push(/** @type {Text} */ (node));
+    if (nodeIsText(node) && textNodeContainsText(node)) {
+      textNodes.push(node);
     }
   });
 
-  /** @type {DOMRect[]} */
-  let rects = [];
-  textNodes.forEach(node => {
+  return textNodes.flatMap(node => {
     const nodeRange = node.ownerDocument.createRange();
     nodeRange.selectNodeContents(node);
     if (node === range.startContainer) {
@@ -90,15 +85,14 @@ export function getTextBoundingBoxes(range) {
     if (nodeRange.collapsed) {
       // If the range ends at the start of this text node or starts at the end
       // of this node then do not include it.
-      return;
+      return [];
     }
 
     // Measure the range and translate from viewport to document coordinates
     const viewportRects = Array.from(nodeRange.getClientRects());
     nodeRange.detach();
-    rects = rects.concat(viewportRects);
+    return viewportRects;
   });
-  return rects;
 }
 
 /**
@@ -106,11 +100,8 @@ export function getTextBoundingBoxes(range) {
  * containing the focus point of a Selection.
  *
  * Returns null if the selection is empty.
- *
- * @param {Selection} selection
- * @return {DOMRect|null}
  */
-export function selectionFocusRect(selection) {
+export function selectionFocusRect(selection: Selection): DOMRect | null {
   if (selection.isCollapsed) {
     return null;
   }
@@ -132,29 +123,23 @@ export function selectionFocusRect(selection) {
  * An `item` can be any data that the caller wishes to compute from or associate
  * with a node. Only unique items, as determined by `Object.is`, are returned.
  *
- * @template T
- * @param {Range} range
- * @param {(n: Node) => T} itemForNode - Callback returning the item for a given node
- * @return {NonNullable<T>[]} items
+ * @param itemForNode - Callback returning the item for a given node
  */
-export function itemsForRange(range, itemForNode) {
-  /** @type {Set<Node>} */
-  const checkedNodes = new Set();
-  /** @type {Set<NonNullable<T>>} */
-  const items = new Set();
+export function itemsForRange<T>(
+  range: Range,
+  itemForNode: (n: Node) => NonNullable<T> | null | undefined
+): NonNullable<T>[] {
+  const checkedNodes = new Set<Node>();
+  const items = new Set<NonNullable<T>>();
 
-  forEachNodeInRange(range, node => {
-    /** @type {Node|null} */
-    let current = node;
+  forEachNodeInRange(range, (current: Node | null) => {
     while (current) {
       if (checkedNodes.has(current)) {
         break;
       }
       checkedNodes.add(current);
 
-      const item = /** @type {NonNullable<T>|null|undefined} */ (
-        itemForNode(current)
-      );
+      const item = itemForNode(current);
       if (item !== null && item !== undefined) {
         items.add(item);
       }
