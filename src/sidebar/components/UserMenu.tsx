@@ -43,7 +43,7 @@ function UserMenu({ frameSync, onLogout, settings }: UserMenuProps) {
   const isSelectableProfile =
     !isThirdParty || serviceSupports('onProfileRequestProvided');
   const isLogoutEnabled =
-    !isThirdParty || serviceSupports('onLogoutRequestProvided');
+    !isThirdParty || serviceSupports('onLogoutRequestProvided') || true;
   const isProfileEnabled = store.isFeatureEnabled('client_user_profile');
 
   const onSelectNotebook = () => {
